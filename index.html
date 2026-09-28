@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PQQ Lưu Trữ</title>
+    
+    <!-- Nạp Tailwind CSS cho tiện ích định dạng -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Nạp FontAwesome cho icon thư mục -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Nạp Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Cấu hình Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Nền vũ trụ tĩnh và gradient */
+        body {
+            margin: 0;
+            overflow-x: hidden;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        /* Lớp chứa các ngôi sao */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Định dạng ngôi sao lấp lánh */
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 10px #fff; }
+            100% { opacity: 0.2; transform: scale(0.8); }
+        }
+
+        /* Cuộn custom cho thanh cuộn đẹp hơn */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Ẩn hiện phần tử mượt mà */
+        .fade-in {
+            animation: fadeIn 0.4s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased flex flex-col items-center py-10 px-4 relative">
+
+    <div id="starfield"></div>
+
+    <!-- Nội dung chính (đặt z-index cao hơn nền sao) -->
+    <main class="w-full max-w-6xl relative z-10 flex flex-col items-center">
+        
+        <!-- Header -->
+        <header class="text-center mb-10 w-full">
+            <div class="inline-block mb-4 p-4 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+                <i class="fa-solid fa-rocket text-4xl text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.6)]"></i>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-wider mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-white to-purple-300 drop-shadow-lg">
+                PQQ LƯU TRỮ
+            </h1>
+            <p class="text-blue-200/70 text-sm md:text-base font-light tracking-wide">
+                Hệ thống lưu trữ tài liệu Võ Đường Pháp Quang
+            </p>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="w-full max-w-2xl mb-12 relative group">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-gray-400 group-focus-within:text-blue-400 transition-colors"></i>
+            </div>
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Tìm kiếm kỳ thi, tài liệu..." 
+                class="w-full pl-12 pr-6 py-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 focus:bg-white/20 text-white placeholder-gray-400 text-lg transition-all shadow-lg shadow-black/20"
+            >
+            <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                <button id="clearSearch" class="hidden text-gray-400 hover:text-white transition-colors p-2">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Danh sách thư mục -->
+        <div id="folderGrid" class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            <!-- Thư mục sẽ được tạo tự động qua JavaScript -->
+        </div>
+
+        <!-- Thông báo khi không tìm thấy kết quả -->
+        <div id="noResults" class="hidden flex-col items-center justify-center mt-12 text-gray-400">
+            <i class="fa-regular fa-face-frown-open text-6xl mb-4 opacity-50"></i>
+            <p class="text-xl font-light">Không tìm thấy tài liệu nào khớp với tìm kiếm của bạn.</p>
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. TẠO HIỆU ỨNG BẦU TRỜI SAO ---
+        function createStars() {
+            const starfield = document.getElementById('starfield');
+            const numStars = 150; // Số lượng sao
+
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Kích thước ngẫu nhiên từ 1px đến 3px
+                const size = Math.random() * 2 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                
+                // Vị trí ngẫu nhiên
+                star.style.left = `${Math.random() * 100}vw`;
+                star.style.top = `${Math.random() * 100}vh`;
+                
+                // Thời gian nhấp nháy ngẫu nhiên
+                const animDuration = Math.random() * 3 + 2; // 2s - 5s
+                star.style.animationDuration = `${animDuration}s`;
+                // Độ trễ ngẫu nhiên để các sao không nháy cùng lúc
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                
+                starfield.appendChild(star);
+            }
+        }
+
+        // --- 2. DỮ LIỆU THƯ MỤC ---
+        const foldersData = [
+            {
+                title: "THI THĂNG ĐAI MÔN PHÁI - VÕ ĐƯỜNG PHÁP QUANG - 12/10/2025",
+                url: "https://lelevietnam99.github.io/THI_THANG_DAI_MON_PHAI_VO_DUONG_PHAP_QUANG_12_10_2025/"
+            },
+            {
+                title: "THI THĂNG ĐAI MÔN PHÁI - CLB CHÙA HUỆ LÂM - ĐÀ LẠT - 06/09/2025",
+                url: "https://lelevietnam99.github.io/THI_THANG_DAI_MON_PHAI_CHUA_HUE_LAM_06_09_2026/"
+            },
+            {
+                title: "THI THĂNG ĐAI MÔN PHÁI - VÕ ĐƯỜNG TRÍ VŨ - 07/06/2026",
+                url: "https://lelevietnam99.github.io/THI_THANG_DAI_VO_DUONG_TRI_VU_07_06_2026/"
+            }
+        ];
+
+        // --- 3. HIỂN THỊ THƯ MỤC LÊN GIAO DIỆN ---
+        const folderGrid = document.getElementById('folderGrid');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearch');
+        const noResultsMessage = document.getElementById('noResults');
+
+        function renderFolders(dataToRender) {
+            folderGrid.innerHTML = ''; // Xóa sạch grid hiện tại
+
+            if (dataToRender.length === 0) {
+                noResultsMessage.classList.remove('hidden');
+                noResultsMessage.classList.add('flex');
+                return;
+            } else {
+                noResultsMessage.classList.add('hidden');
+                noResultsMessage.classList.remove('flex');
+            }
+
+            dataToRender.forEach((folder, index) => {
+                // Tạo thẻ a bao bọc
+                const anchor = document.createElement('a');
+                anchor.href = folder.url;
+                anchor.target = "_blank";
+                // Glassmorphism classes + hiệu ứng hover
+                anchor.className = `
+                    fade-in group flex flex-col items-center justify-center p-8 rounded-2xl 
+                    bg-white/10 backdrop-blur-md border border-white/10 shadow-xl 
+                    hover:bg-white/20 hover:border-white/30 transition-all duration-300 
+                    transform hover:-translate-y-2 hover:shadow-[0_10px_40px_rgba(0,0,0,0.5)]
+                    cursor-pointer text-center h-full
+                `;
+                // Tạo độ trễ animation để các card hiện ra tuần tự
+                anchor.style.animationDelay = `${index * 0.1}s`;
+
+                // Nội dung HTML bên trong thẻ a
+                anchor.innerHTML = `
+                    <div class="relative mb-6">
+                        <!-- Hiệu ứng sáng (glow) phía sau icon -->
+                        <div class="absolute inset-0 bg-yellow-400 blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-300 rounded-full"></div>
+                        <!-- Icon thư mục -->
+                        <i class="fa-solid fa-folder relative z-10 text-6xl text-yellow-500/90 group-hover:text-yellow-400 transition-colors drop-shadow-md"></i>
+                    </div>
+                    <h3 class="text-sm md:text-base font-semibold leading-relaxed text-white/90 group-hover:text-white transition-colors line-clamp-3">
+                        ${folder.title}
+                    </h3>
+                    <div class="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span class="inline-block px-3 py-1 bg-white/10 rounded-full text-xs text-blue-200 border border-blue-200/30">
+                            Mở liên kết <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[10px]"></i>
+                        </span>
+                    </div>
+                `;
+
+                folderGrid.appendChild(anchor);
+            });
+        }
+
+        // --- 4. XỬ LÝ TÌM KIẾM THEO THỜI GIAN THỰC ---
+        function handleSearch() {
+            const query = searchInput.value.toLowerCase().trim();
+            
+            // Xử lý nút X (clear)
+            if (query.length > 0) {
+                clearSearchBtn.classList.remove('hidden');
+            } else {
+                clearSearchBtn.classList.add('hidden');
+            }
+
+            // Lọc dữ liệu
+            const filteredFolders = foldersData.filter(folder => 
+                folder.title.toLowerCase().includes(query)
+            );
+
+            renderFolders(filteredFolders);
+        }
+
+        // Gắn sự kiện cho ô tìm kiếm
+        searchInput.addEventListener('input', handleSearch);
+
+        // Gắn sự kiện cho nút xóa tìm kiếm
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            handleSearch();
+            searchInput.focus();
+        });
+
+        // --- 5. KHỞI CHẠY KHI TẢI TRANG ---
+        window.onload = () => {
+            createStars();
+            renderFolders(foldersData);
+        };
+
+    </script>
+</body>
+</html>
